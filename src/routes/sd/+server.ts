@@ -7,6 +7,7 @@ const TXT2IMG = import.meta.env.VITE_TXT2IMG_PATH;
 const OUTDIR = import.meta.env.VITE_OUTDIR;
 
 let busy = false;
+let lastSeed:number|null = null;
 
 /** @type {import('./$types').RequestHandler} */
 export async function GET() {
@@ -14,7 +15,8 @@ export async function GET() {
     return new Response(JSON.stringify({ busy }));
   }
   const response = new Response(JSON.stringify({ 
-    images: await getImages() 
+    images: await getImages(),
+    seed: lastSeed 
   }));
   return response;
 }
@@ -26,9 +28,10 @@ export async function POST( { request }) {
   }
   const data = await request.json();
   console.log('POST', data);
+  lastSeed = data.seed ?? Math.floor(Math.random() * 4294967295);
   busy = true;
   await clear();
-  txt2img(data.prompt).then(() => {
+  txt2img(data.prompt, lastSeed as number, data.steps).then(() => {
     busy = false;
   });
   return new Response(JSON.stringify({started:true}));
@@ -54,8 +57,10 @@ const getImages = async () => {
   }
 };
 
-const txt2img = (prompt:string) => new Promise((resolve, reject) => {
-  const child = exec(`cd ${SD_PATH}; python ${TXT2IMG} --prompt "${prompt}" --plms --outdir ${OUTDIR}`, (error, stdout, stderr) => {
+const txt2img = (prompt:string, seed:number, steps = 50) => new Promise<void>((resolve) => {
+  const cmd = `cd ${SD_PATH}; python ${TXT2IMG} --seed ${seed} --ddim_steps ${steps} --prompt "${prompt}" --plms --outdir ${OUTDIR}`;
+  console.log(cmd);
+  const child = exec(cmd, (error, stdout, stderr) => {
     if (error) {
       console.log(error.stack);
       console.log('Error code: ' + error.code);

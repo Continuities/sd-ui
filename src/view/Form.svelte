@@ -5,16 +5,20 @@
   const POLL_DELAY = import.meta.env.VITE_POLL_DELAY;
 
   let text = '';
+  let seed = '';
   let working = false;
   let images = null;
+  let imageSeed = null;
 
   const change = (e:{ currentTarget: HTMLInputElement }) => text = e.currentTarget.value;
+  const changeSeed = (e:{ currentTarget: HTMLInputElement }) => {console.log(e.currentTarget.value);seed = e.currentTarget.value;};
 
   const submit = async (e:Event) => {
     e.preventDefault();
+    const seedNum = parseInt(seed);
     const response = await fetch('./sd', {
       method: 'post',
-      body: JSON.stringify({prompt:text})
+      body: JSON.stringify({ prompt:text, seed: isNaN(seedNum) ? null : seedNum })
     });
     if (response.ok) {
       setTimeout(poll, POLL_DELAY);
@@ -31,6 +35,7 @@
     }
     if (data.images) {
       images = data.images;
+      imageSeed = data.seed;
       working = false;
     }
   }
@@ -38,7 +43,8 @@
 </script>
 
 <form class='form' on:submit={submit}>
-  <input type='text' class='input' placeholder='Enter your prompt' value={text} on:change={change} disabled={working} />
+  <input type='text' class='input' placeholder='Enter your prompt' value={text} on:input={change} disabled={working} />
+  <input type='number' class='seed' placeholder='Random seed' on:input={changeSeed} disabled={working} />
   <button class='submit' type='submit' disabled={working}>Generate</button>
 </form>
 
@@ -51,6 +57,7 @@
       <img class='image' src='data:image/png;base64,{image}' />
     {/each}
   </div>
+  <div class='imageSeed'>seed: {imageSeed}</div>
 {/if}
 </div>
 
@@ -63,6 +70,11 @@
     width: 100%;
     font-size: 1.5rem;
     padding: 10px 20px;
+  }
+  .seed {
+    font-size: 1.5rem;
+    padding: 10px 20px;
+    width: 220px;
   }
   .submit {
     font-size: 1.5rem;
@@ -80,6 +92,7 @@
     margin-top: 40px;
     min-height: 1024px;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
   }
