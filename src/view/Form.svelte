@@ -6,21 +6,27 @@
 
   let text = '';
   let working = false;
-  let image = null;
+  let images = null;
 
   const change = (e:{ currentTarget: HTMLInputElement }) => text = e.currentTarget.value;
 
   const submit = async (e:Event) => {
     e.preventDefault();
+    /*
     const response = await fetch('./sd', {
       method: 'post',
       body: JSON.stringify({prompt:text})
     });
     if (response.ok) {
       setTimeout(poll, POLL_DELAY);
-      image = null;
+      images = null;
       working = true;
     }
+    */
+
+    setTimeout(poll, POLL_DELAY);
+    images = null;
+    working = true;
   }
 
   const poll = async () => {
@@ -29,8 +35,8 @@
     if (data.busy) {
       setTimeout(poll, POLL_DELAY);
     }
-    if (data.img) {
-      image = data.img;
+    if (data.images) {
+      images = data.images;
       working = false;
     }
   }
@@ -45,8 +51,12 @@
 <div class='results'>
 {#if working}
   <Circle2 size='200' unit='px' />
-{:else if image}
-  <img class='image' src='data:image/png;base64,{image}' />
+{:else if images}
+  <div class='grid'>
+    {#each images as image}
+      <img class='image' src='data:image/png;base64,{image}' />
+    {/each}
+  </div>
 {/if}
 </div>
 
@@ -60,14 +70,14 @@
     font-size: 1.5rem;
     padding: 10px 20px;
   }
-  .buttons {
-    padding-top: 20px;
-    display: flex;
-    justify-content: flex-end;
-  }
   .submit {
     font-size: 1.5rem;
     padding: 10px 20px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-gap: 5px;
   }
   .results {
     margin-top: 40px;

@@ -1,5 +1,5 @@
 import { exec } from 'child_process';
-import { rm, access, readDir, readFile } from 'fs/promises';
+import { rm, access, readdir, readFile } from 'fs/promises';
 import path from 'path';
 
 const SD_PATH = import.meta.env.VITE_SD_PATH;
@@ -45,10 +45,11 @@ const getImages = async () => {
   try {
     const folder = path.join(OUTDIR, 'samples');
     await access(folder);
-    const files = await readDir(folder);
-    return Promise.all(files.map(file => readFile(file, { encoding: 'base64' })));
+    const files = await readdir(folder);
+    return Promise.all(files.map((file) => readFile(path.join(folder, file), { encoding: 'base64' })));
   }
-  catch {
+  catch (e) {
+    console.log('ERROR', e);
     return null;  
   }
 };
