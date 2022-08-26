@@ -1,38 +1,68 @@
 import { exec } from 'child_process';
+import { rm, access,readFile } from 'fs/promises';
+import path from 'path';
 
+const SD_PATH = import.meta.env.VITE_SD_PATH;
 const TXT2IMG = import.meta.env.VITE_TXT2IMG_PATH;
+const OUTDIR = import.meta.env.VITE_OUTDIR;
 
 let busy = false;
-let lastImage: string | null = null;
 
 /** @type {import('./$types').RequestHandler} */
 export async function GET() {
   if (busy) {
     return new Response(JSON.stringify({ busy }));
   }
-  const response = new Response(JSON.stringify({img: lastImage}));
-  lastImage = null;
+  const response = new Response(JSON.stringify({ img: await getImage() }));
   return response;
 }
 
 /** @type {import('./$types').Action} */
-export async function POST( {request }) {
+export async function POST( { request }) {
   if (busy) {
     return new Response(JSON.stringify({error:'SD is busy'}), {status: 400});
   }
   const data = await request.json();
   console.log('POST', data);
   busy = true;
-  txt2img(data.prompt).then((img) => {
-    console.log('complete');
+  await clear();
+  txt2img(data.prompt).then(() => {
     busy = false;
-    lastImage = img;
   });
   return new Response(JSON.stringify({started:true}));
 }
 
+const clear = async () => {
+  try {
+    await access(OUTDIR);
+    rm(OUTDIR, { recursive: true });
+  }
+  catch {}
+};
+const getImage = async () => {
+  try {
+    const file = path.join(OUTDIR, 'grid-0000.png');
+    await access(file);
+    return readFile(file, { encoding: 'base64' })
+  }
+  catch {
+    return null;  
+  }
+};
+
 const txt2img = (prompt:string) => new Promise((resolve, reject) => {
-  const child = exec(`python ${TXT2IMG} --prompt "${prompt}" --plms`);
-  child.stdout.pipe(process.stdout)
-  child.on('exit', () => resolve('PLACEHOLDER_IMG_PATH'));
+  const child = exec(`cd ${SD_PATH}; python ${TXT2IMG} --prompt "${prompt}" --plms --outdir ${OUTDIR}`, (error, stdout, stderr) => {
+    if (error) {
+      console.log(error.stack);
+      console.log('Error code: ' + error.code);
+      console.log('Signal received: ' + error.signal);
+    }
+    console.log('Child Process STDOUT: ' + stdout);
+    console.log('Child Process STDERR: ' + stderr);
+  });
+  // child.stdout.pipe(process.stdout)
+  child.on('exit', (code) => {
+    console.log('exit', code);
+    resolve()
+  });
 });

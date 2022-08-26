@@ -2,8 +2,16 @@
   import Form from '../view/Form.svelte';
 </script>
 
-<h1>Stable Diffusion</h1>
-<main>
+<main class='main'>
+  <h1>Stable Diffusion v1.4</h1>
   <Form />
 </main>
+
+<style>
+  .main {
+    padding: 20px 40px;
+  }
+</style>
+
+
 
