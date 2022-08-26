@@ -12,7 +12,6 @@
 
   const submit = async (e:Event) => {
     e.preventDefault();
-    /*
     const response = await fetch('./sd', {
       method: 'post',
       body: JSON.stringify({prompt:text})
@@ -22,11 +21,6 @@
       images = null;
       working = true;
     }
-    */
-
-    setTimeout(poll, POLL_DELAY);
-    images = null;
-    working = true;
   }
 
   const poll = async () => {
@@ -78,6 +72,9 @@
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     grid-gap: 5px;
+  }
+  .image {
+    border: 1px solid #666;
   }
   .results {
     margin-top: 40px;
