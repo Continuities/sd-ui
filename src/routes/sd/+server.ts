@@ -1,5 +1,5 @@
 import { exec } from 'child_process';
-import { rm, access,readFile } from 'fs/promises';
+import { rm, access, readDir, readFile } from 'fs/promises';
 import path from 'path';
 
 const SD_PATH = import.meta.env.VITE_SD_PATH;
@@ -13,7 +13,9 @@ export async function GET() {
   if (busy) {
     return new Response(JSON.stringify({ busy }));
   }
-  const response = new Response(JSON.stringify({ img: await getImage() }));
+  const response = new Response(JSON.stringify({ 
+    images: await getImages() 
+  }));
   return response;
 }
 
@@ -39,11 +41,12 @@ const clear = async () => {
   }
   catch {}
 };
-const getImage = async () => {
+const getImages = async () => {
   try {
-    const file = path.join(OUTDIR, 'grid-0000.png');
-    await access(file);
-    return readFile(file, { encoding: 'base64' })
+    const folder = path.join(OUTDIR, 'samples');
+    await access(folder);
+    const files = await readDir(folder);
+    return Promise.all(files.map(file => readFile(file, { encoding: 'base64' })));
   }
   catch {
     return null;  
